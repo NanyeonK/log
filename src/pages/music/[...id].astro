@@ -1,0 +1,34 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import EntryHero from '../../components/EntryHero.astro';
+import { getPublished, toCard } from '../../lib/media';
+
+export async function getStaticPaths() {
+  const entries = await getPublished('music');
+  return entries.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const card = toCard('music', entry);
+const d = entry.data;
+const facts: Array<[string, string]> = [];
+if (d.label) facts.push(['레이블', d.label]);
+if (d.genre.length) facts.push(['장르', d.genre.join(', ')]);
+if (d.rating != null) facts.push(['평점', `${d.rating} / 10`]);
+facts.push(['감상일', d.date.toISOString().slice(0, 10)]);
+---
+
+<Base title={`${d.title} — ${d.artist}`}>
+  <EntryHero card={card} facts={facts} />
+  {d.tracks?.length ? (
+    <section class="tracklist reveal">
+      <h2>트랙</h2>
+      <ol>{d.tracks.map((t) => <li>{t}</li>)}</ol>
+    </section>
+  ) : null}
+  <article class="prose reveal">
+    <Content />
+  </article>
+</Base>

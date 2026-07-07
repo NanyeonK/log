@@ -1,0 +1,31 @@
+---
+import type { CardModel } from '../lib/media';
+
+interface Props {
+  card: CardModel;
+  facts: Array<[string, string]>;
+}
+
+const { card, facts } = Astro.props;
+---
+
+<section class="entry-hero">
+  <div class={`cover ${card.aspect === 'square' ? 'ar-square' : 'ar-poster'}`}>
+    <img src={card.cover} alt={`${card.title} 커버`} transition:name={card.transitionName} />
+  </div>
+  <div>
+    <span class="kind" style="color: var(--accent); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;">
+      {card.kindLabel}
+    </span>
+    <h1>{card.title}</h1>
+    <p class="byline">{card.creator}{card.year ? ` · ${card.year}` : ''}</p>
+    <dl class="facts">
+      {facts.map(([k, v]) => (
+        <div>
+          <dt>{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>

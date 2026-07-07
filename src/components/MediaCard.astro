@@ -1,0 +1,34 @@
+---
+import type { CardModel } from '../lib/media';
+
+interface Props {
+  card: CardModel;
+  index?: number;
+}
+
+const { card, index = 0 } = Astro.props;
+const delay = `${Math.min(index, 11) * 60}ms`;
+---
+
+<article class="media-card reveal" style={`--delay:${delay}`}>
+  <a href={card.href}>
+    <div class={`cover ${card.aspect === 'square' ? 'ar-square' : 'ar-poster'}`}>
+      <img
+        src={card.cover}
+        alt={`${card.title} 커버`}
+        loading="lazy"
+        decoding="async"
+        transition:name={card.transitionName}
+      />
+    </div>
+    <div class="meta">
+      <span class="kind">{card.kindLabel}</span>
+      <h3>{card.title}</h3>
+      <p class="byline">
+        {card.creator}{card.year ? ` · ${card.year}` : ''}{
+          card.rating != null ? <span class="rating"> · ★ {card.rating}/10</span> : ''
+        }
+      </p>
+    </div>
+  </a>
+</article>

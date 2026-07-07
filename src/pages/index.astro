@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+import MediaCard from '../components/MediaCard.astro';
+import { getAllCards } from '../lib/media';
+
+const cards = await getAllCards();
+const latest = cards.slice(0, 12);
+---
+
+<Base>
+  <section class="hero">
+    <h1 class="reveal in-view">
+      듣고, 보고,<br />읽은 것들<em>.</em>
+    </h1>
+    <p class="reveal in-view" style="--delay:120ms">
+      음악·영화·책을 지나온 기록. 최근 감상부터.
+    </p>
+  </section>
+
+  <div class="section-head">
+    <h2>최근 감상</h2>
+  </div>
+  <div class="media-grid">
+    {latest.map((card, i) => <MediaCard card={card} index={i} />)}
+  </div>
+</Base>

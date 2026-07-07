@@ -1,0 +1,41 @@
+# GitHub Pages 배포 — 사용자가 repo 생성·push를 결정한 뒤에만 동작.
+# 사전 준비:
+#   1. astro.config.mjs 의 site (및 project pages 라면 base) 를 실제 값으로 교체
+#   2. GitHub repo Settings -> Pages -> Source: "GitHub Actions" 선택
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install, build, and upload site
+        uses: withastro/action@v3
+        with:
+          node-version: 24
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

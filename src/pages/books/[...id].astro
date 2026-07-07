@@ -1,0 +1,29 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import EntryHero from '../../components/EntryHero.astro';
+import { getPublished, toCard } from '../../lib/media';
+
+export async function getStaticPaths() {
+  const entries = await getPublished('books');
+  return entries.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const card = toCard('books', entry);
+const d = entry.data;
+const facts: Array<[string, string]> = [];
+if (d.publisher) facts.push(['출판사', d.publisher]);
+if (d.pages) facts.push(['쪽수', `${d.pages}p`]);
+if (d.genre.length) facts.push(['장르', d.genre.join(', ')]);
+if (d.rating != null) facts.push(['평점', `${d.rating} / 10`]);
+facts.push(['감상일', d.date.toISOString().slice(0, 10)]);
+---
+
+<Base title={`${d.title} — ${d.author}`}>
+  <EntryHero card={card} facts={facts} />
+  <article class="prose reveal">
+    <Content />
+  </article>
+</Base>

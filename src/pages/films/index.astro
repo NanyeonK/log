@@ -1,0 +1,20 @@
+---
+import Base from '../../layouts/Base.astro';
+import MediaCard from '../../components/MediaCard.astro';
+import { getPublished, toCard } from '../../lib/media';
+
+const entries = await getPublished('films');
+const cards = entries
+  .map((e) => toCard('films', e))
+  .sort((a, b) => b.date.getTime() - a.date.getTime());
+---
+
+<Base title="영화 — 감상 기록">
+  <section class="hero">
+    <h1 class="reveal in-view">영화<em>.</em></h1>
+    <p class="reveal in-view" style="--delay:120ms">본 것들, 남은 장면들.</p>
+  </section>
+  <div class="media-grid">
+    {cards.map((card, i) => <MediaCard card={card} index={i} />)}
+  </div>
+</Base>
