@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { withBase } from './url';
 
 export type Kind = 'music' | 'films' | 'books';
 
@@ -45,12 +46,12 @@ export function toCard(kind: Kind, entry: CollectionEntry<Kind>): CardModel {
   return {
     kind,
     kindLabel: KIND_LABEL[kind],
-    href: `/${kind}/${entry.id}/`,
+    href: withBase(`/${kind}/${entry.id}/`),
     transitionName: `cover-${kind}-${entry.id}`,
     title: data.title,
     creator: creatorOf(kind, data),
     year: data.year,
-    cover: data.cover ?? FALLBACK_COVER[kind],
+    cover: withBase(data.cover ?? FALLBACK_COVER[kind]),
     rating: data.rating,
     date: data.date,
     aspect: kind === 'music' ? 'square' : 'poster',

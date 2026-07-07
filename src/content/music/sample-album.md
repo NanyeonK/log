@@ -12,6 +12,7 @@ cover: '/covers/placeholder-music.svg'
 rating: 8
 date: 2026-07-05
 publish: true
+draft: true # 샘플 더미 — 첫 실감상 발행 때 교체
 ---
 
 ## 한 줄 인상

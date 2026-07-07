@@ -9,6 +9,7 @@ cover: '/covers/placeholder-book.svg'
 rating: 9
 date: 2026-06-20
 publish: true
+draft: true # 샘플 더미 — 첫 실감상 발행 때 교체
 ---
 
 ## 한 줄 인상

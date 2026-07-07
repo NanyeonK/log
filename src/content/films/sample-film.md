@@ -8,6 +8,7 @@ cover: '/covers/placeholder-film.svg'
 rating: 7
 date: 2026-07-01
 publish: true
+draft: true # 샘플 더미 — 첫 실감상 발행 때 교체
 ---
 
 ## 한 줄 인상

@@ -13,7 +13,7 @@ const { card, facts } = Astro.props;
   <div class={`cover ${card.aspect === 'square' ? 'ar-square' : 'ar-poster'}`}>
     <img src={card.cover} alt={`${card.title} 커버`} transition:name={card.transitionName} />
   </div>
-  <div>
+  <div data-entry-stagger>
     <span class="kind" style="color: var(--accent); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;">
       {card.kindLabel}
     </span>

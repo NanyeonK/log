@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import { withBase } from '../lib/url';
 import '../styles/global.css';
 
 interface Props {
@@ -9,9 +10,9 @@ interface Props {
 
 const { title = '듣고, 보고, 읽은 것들', description = '연찬의 책·음악·영화 감상 기록' } = Astro.props;
 const nav = [
-  { href: '/music/', label: '음악' },
-  { href: '/films/', label: '영화' },
-  { href: '/books/', label: '책' },
+  { href: withBase('/music/'), label: '음악' },
+  { href: withBase('/films/'), label: '영화' },
+  { href: withBase('/books/'), label: '책' },
 ];
 const current = Astro.url.pathname;
 ---
@@ -21,17 +22,18 @@ const current = Astro.url.pathname;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
     <title>{title}</title>
     <ClientRouter />
     <script is:inline>
-      // 다크모드: FOUC 방지 위해 inline. View Transitions 스왑 후에도 재적용.
+      // 다크모드 + js 플래그: FOUC 방지 위해 inline. View Transitions 스왑 후에도 재적용.
       (function () {
         const apply = () => {
           const saved = localStorage.getItem('theme');
           const theme =
             saved ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
           document.documentElement.dataset.theme = theme;
+          document.documentElement.classList.add('js');
         };
         apply();
         document.addEventListener('astro:after-swap', apply);
@@ -41,7 +43,7 @@ const current = Astro.url.pathname;
   <body>
     <header class="site-header">
       <div class="wrap">
-        <a class="wordmark" href="/">듣다<span>·</span>보다<span>·</span>읽다</a>
+        <a class="wordmark" href={withBase('/')}>듣다<span>·</span>보다<span>·</span>읽다</a>
         <nav class="site-nav">
           {nav.map((item) => (
             <a href={item.href} aria-current={current.startsWith(item.href) ? 'page' : undefined}>
@@ -64,26 +66,7 @@ const current = Astro.url.pathname;
     </footer>
 
     <script>
-      // 스크롤 리빌 (IntersectionObserver) — View Transitions 네비게이션마다 재초기화
-      function initReveal() {
-        const els = document.querySelectorAll<HTMLElement>('.reveal:not(.in-view)');
-        if (!('IntersectionObserver' in window)) {
-          els.forEach((el) => el.classList.add('in-view'));
-          return;
-        }
-        const io = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                entry.target.classList.add('in-view');
-                io.unobserve(entry.target);
-              }
-            }
-          },
-          { threshold: 0.08, rootMargin: '0px 0px -40px 0px' },
-        );
-        els.forEach((el) => io.observe(el));
-      }
+      import { initMotion, destroyMotion } from '../scripts/motion';
 
       function initThemeToggle() {
         document.getElementById('theme-toggle')?.addEventListener('click', () => {
@@ -94,8 +77,12 @@ const current = Astro.url.pathname;
       }
 
       document.addEventListener('astro:page-load', () => {
-        initReveal();
         initThemeToggle();
+        initMotion();
+      });
+      // View Transitions 스왑 직전: 이전 페이지의 ScrollTrigger/리스너 정리
+      document.addEventListener('astro:before-swap', () => {
+        destroyMotion();
       });
     </script>
   </body>

@@ -26,6 +26,11 @@
 * { box-sizing: border-box; margin: 0; }
 
 html { scroll-behavior: smooth; }
+/* lenis smooth scroll */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 body {
   background: var(--bg);
@@ -79,12 +84,17 @@ img { max-width: 100%; display: block; }
 /* ===== hero ===== */
 .hero { padding-block: clamp(3.5rem, 12vh, 8rem) clamp(2.5rem, 7vh, 5rem); }
 .hero h1 {
-  font-size: clamp(2.6rem, 8.5vw, 6.5rem);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-size: clamp(2.8rem, 10vw, 8rem);
+  line-height: 1.0;
+  letter-spacing: -0.04em;
   font-weight: 800;
   text-wrap: balance;
 }
+/* 라인 마스크 리빌 (GSAP이 .hero-line-inner 를 구동) */
+.hero-line { display: block; overflow: hidden; }
+.hero-line-inner { display: block; will-change: transform; }
+.js [data-hero-title]:not(.in-view) .hero-line-inner { transform: translateY(112%); }
+.js .hero-sub:not(.in-view) { opacity: 0; transform: translateY(24px); }
 .hero h1 em { font-style: normal; color: var(--accent); }
 .hero p {
   margin-top: 1.25rem; color: var(--muted);
@@ -109,18 +119,36 @@ img { max-width: 100%; display: block; }
   padding-bottom: 4rem;
 }
 
-.media-card { position: relative; }
+.media-card {
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.media-card:hover { transform: translateY(-6px); }
 .media-card .cover {
+  position: relative;
   overflow: hidden; border-radius: var(--radius);
   background: var(--card); box-shadow: var(--shadow);
-  transition: box-shadow 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.35s ease;
+  transform-style: preserve-3d;
 }
 .media-card .cover img {
   width: 100%; height: 100%; object-fit: cover;
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.media-card:hover .cover { box-shadow: var(--shadow-lift); transform: translateY(-4px); }
-.media-card:hover .cover img { transform: scale(1.04); }
+/* 포인터 추적 글레어 (--mx/--my 는 motion.ts 가 갱신) */
+.media-card .cover::after {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(
+    240px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(255 255 255 / 0.16),
+    transparent 65%
+  );
+  opacity: 0; transition: opacity 0.35s ease;
+}
+.media-card:hover .cover { box-shadow: var(--shadow-lift); }
+.media-card:hover .cover::after { opacity: 1; }
+.media-card:hover .cover img { transform: scale(1.05); }
 .cover.ar-square { aspect-ratio: 1 / 1; }
 .cover.ar-poster { aspect-ratio: 2 / 3; }
 
@@ -181,19 +209,17 @@ img { max-width: 100%; display: block; }
   color: var(--muted); font-size: 0.85rem;
 }
 
-/* ===== scroll reveal ===== */
-.reveal {
-  opacity: 0;
-  transform: translateY(26px);
-  transition:
-    opacity 0.7s ease,
-    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: var(--delay, 0ms);
-}
-.reveal.in-view { opacity: 1; transform: none; }
+/* ===== scroll reveal (GSAP ScrollTrigger 가 구동 — motion.ts) ===== */
+/* JS 없으면(.js 부재) 항상 보임; JS 있으면 in-view 전까지 숨김 후 GSAP 등장 */
+.js .reveal:not(.in-view) { opacity: 0; transform: translateY(30px); }
+.js [data-entry-stagger]:not(.in-view) > * { opacity: 0; transform: translateY(26px); }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
-  .media-card .cover img, .media-card .cover { transition: none; }
+  .js .reveal:not(.in-view),
+  .js .hero-sub:not(.in-view),
+  .js [data-entry-stagger]:not(.in-view) > * { opacity: 1 !important; transform: none !important; }
+  .js [data-hero-title]:not(.in-view) .hero-line-inner { transform: none !important; }
+  .media-card, .media-card .cover img, .media-card .cover { transition: none; }
+  .media-card:hover { transform: none; }
   html { scroll-behavior: auto; }
 }

@@ -11,8 +11,8 @@ const cards = entries
 
 <Base title="책 — 감상 기록">
   <section class="hero">
-    <h1 class="reveal in-view">책<em>.</em></h1>
-    <p class="reveal in-view" style="--delay:120ms">읽은 책과 그 언저리의 생각.</p>
+    <h1 data-hero-title><span class="hero-line"><span class="hero-line-inner">책<em>.</em></span></span></h1>
+    <p class="hero-sub">읽은 책과 그 언저리의 생각.</p>
   </section>
   <div class="media-grid">
     {cards.map((card, i) => <MediaCard card={card} index={i} />)}
