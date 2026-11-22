@@ -13,7 +13,7 @@ const baseSlug = (category: string) => {
 export function categorySlugs(categories: string[]): Map<string, string> {
   const result = new Map(categories.map((category) => {
     const base = baseSlug(category);
-    const suffix = base !== category ? `-${createHash('sha256').update(category).digest('hex').slice(0, 12)}` : '';
+    const suffix = base !== category || /-[0-9a-f]{12}$/.test(category) ? `-${createHash('sha256').update(category).digest('hex').slice(0, 12)}` : '';
     return [category, base + suffix];
   }));
   if (new Set(result.values()).size !== result.size) throw new Error('Category URL slug collision');

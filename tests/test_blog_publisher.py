@@ -73,12 +73,16 @@ class PublisherRegression(unittest.TestCase):
         print('  category pages:', ', '.join(sorted(pages)))
         print('  C++ slug unchanged after adding C#:', cpp_slug)
         print('  distinct post pages: 7')
-        # A literal category matching the generated slug must still fail the build.
+        # A literal category matching a generated slug receives its own suffix.
         note(posts/'collision.md', 'Collision', cpp_slug)
-        with self.assertRaisesRegex(ValueError, 'Category URL slug collision'):
-            publisher.build_log(checkout)
+        publisher.build_log(checkout)
+        pages = {p.parent.name for p in (checkout/'dist/categories').glob('*/index.html')}
+        literal_slug = slug(cpp_slug, cpp_slug)
+        self.assertNotEqual(cpp_slug, literal_slug)
+        self.assertTrue({cpp_slug, literal_slug} <= pages, pages)
+        self.assertEqual(len(list((checkout/'dist/posts').glob('*/index.html'))), 8)
         (posts/'collision.md').unlink()
-        print('  literal hashed-slug collision: Astro build rejected')
+        print('  literal hashed-slug category:', literal_slug)
         # Reuse the installed checkout to exercise the real schema validator.
         note(posts/'invalid.md', 'Bad', 'book', 'rating: 11\nyear: "bad"\n')
         env = os.environ.copy()
