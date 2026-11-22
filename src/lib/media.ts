@@ -6,13 +6,14 @@ export interface CardModel {
   creator: string; year?: number; cover: string; rating?: number; date: Date;
   aspect: 'square' | 'poster';
 }
-const baseSlug = (category: string) => category.normalize('NFKC').trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'category';
+const baseSlug = (category: string) => {
+  const slug = category.normalize('NFKC').trim().toLowerCase().replace(/[^\p{L}\p{M}\p{N}._~-]+/gu, '-').replace(/^-|-$/g, '');
+  return !slug || slug === '.' || slug === '..' ? 'category' : slug;
+};
 export function categorySlugs(categories: string[]): Map<string, string> {
-  const counts = new Map<string, number>();
-  for (const category of categories) counts.set(baseSlug(category), (counts.get(baseSlug(category)) ?? 0) + 1);
   const result = new Map(categories.map((category) => {
     const base = baseSlug(category);
-    const suffix = counts.get(base)! > 1 ? `-${createHash('sha256').update(category).digest('hex').slice(0, 12)}` : '';
+    const suffix = base !== category ? `-${createHash('sha256').update(category).digest('hex').slice(0, 12)}` : '';
     return [category, base + suffix];
   }));
   if (new Set(result.values()).size !== result.size) throw new Error('Category URL slug collision');
@@ -34,7 +35,7 @@ export async function getAllCards() {
   return (await getPublished()).map(toCard).sort((a, b) => b.date.getTime() - a.date.getTime());
 }
 export async function getCategories() {
-  const categories = [...new Set((await getPublished()).map((entry) => entry.data.category.trim()))];
+  const categories = [...new Set((await getPublished()).map((entry) => entry.data.category))];
   categorySlugs(categories);
   return categories.sort((a, b) => a.localeCompare(b));
 }

@@ -2,6 +2,7 @@
 """Regression tests use isolated sources, checkouts and local bare remotes."""
 import importlib.machinery
 import importlib.util
+import hashlib
 import os
 from pathlib import Path
 import shutil
@@ -55,18 +56,29 @@ class PublisherRegression(unittest.TestCase):
         checkout = self.root/'site'
         shutil.copytree(ROOT, checkout, ignore=shutil.ignore_patterns('.git', 'node_modules', 'dist', '.astro', '__pycache__'))
         posts = checkout/'src/content/posts'
-        for i, category in enumerate(('이슈', '생각', 'C++', 'C#')):
+        for i, category in enumerate(('이슈', '생각', 'C++', 'thought', 'book', 'a b')):
             note(self.source/f'post-{i}.md', f'Post {i}', category, 'slug: shared\n')
         for dest, content in publisher.scan('log', self.source).values():
             (checkout/dest).write_bytes(content)
         publisher.build_log(checkout)
         pages = {p.parent.name for p in (checkout/'dist/categories').glob('*/index.html')}
-        self.assertTrue({'이슈', '생각'} <= pages, pages)
-        c_pages = sorted(p for p in pages if p.startswith('c-'))
-        self.assertEqual(len(c_pages), 2, pages)
-        self.assertEqual(len(list((checkout/'dist/posts').glob('*/index.html'))), 4)
+        slug = lambda raw, base: f"{base}-{hashlib.sha256(raw.encode()).hexdigest()[:12]}"
+        cpp_slug = slug('C++', 'c')
+        self.assertTrue({'이슈', '생각', 'thought', 'book', cpp_slug, slug('a b', 'a-b')} <= pages, pages)
+        note(posts/'c-sharp.md', 'C sharp', 'C#')
+        publisher.build_log(checkout)
+        pages = {p.parent.name for p in (checkout/'dist/categories').glob('*/index.html')}
+        self.assertTrue({cpp_slug, slug('C#', 'c'), '이슈', '생각'} <= pages, pages)
+        self.assertEqual(len(list((checkout/'dist/posts').glob('*/index.html'))), 7)
         print('  category pages:', ', '.join(sorted(pages)))
-        print('  distinct post pages: 4')
+        print('  C++ slug unchanged after adding C#:', cpp_slug)
+        print('  distinct post pages: 7')
+        # A literal category matching the generated slug must still fail the build.
+        note(posts/'collision.md', 'Collision', cpp_slug)
+        with self.assertRaisesRegex(ValueError, 'Category URL slug collision'):
+            publisher.build_log(checkout)
+        (posts/'collision.md').unlink()
+        print('  literal hashed-slug collision: Astro build rejected')
         # Reuse the installed checkout to exercise the real schema validator.
         note(posts/'invalid.md', 'Bad', 'book', 'rating: 11\nyear: "bad"\n')
         env = os.environ.copy()

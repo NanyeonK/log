@@ -8,7 +8,7 @@ export async function getStaticPaths() {
   return categories.map((category) => ({ params: { category: slugs.get(category)! }, props: { category } }));
 }
 const { category } = Astro.props;
-const cards = (await getPublished()).filter((e) => e.data.category.trim() === category).map(toCard)
+const cards = (await getPublished()).filter((e) => e.data.category === category).map(toCard)
   .sort((a, b) => b.date.getTime() - a.date.getTime());
 ---
 <Base title={`${categoryLabel(category)} — 기록`}>
