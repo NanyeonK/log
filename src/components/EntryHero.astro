@@ -18,7 +18,7 @@ const { card, facts } = Astro.props;
       {card.kindLabel}
     </span>
     <h1>{card.title}</h1>
-    <p class="byline">{card.creator}{card.year ? ` · ${card.year}` : ''}</p>
+    <p class="byline">{card.creator}{card.year != null ? ` · ${card.year}` : ''}</p>
     <dl class="facts">
       {facts.map(([k, v]) => (
         <div>

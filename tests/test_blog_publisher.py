@@ -3,6 +3,7 @@
 import importlib.machinery
 import importlib.util
 import hashlib
+from html.parser import HTMLParser
 import os
 from pathlib import Path
 import shutil
@@ -23,6 +24,13 @@ def git(*args, cwd):
 def note(path, title, category, extra=''):
     path.write_text(f'---\ntitle: {title}\ndate: "2026-11-22"\npublish: true\ncategory: "{category}"\ntags: []\n{extra}---\nBody\n', encoding='utf-8')
 
+class TextExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.text = []
+    def handle_data(self, data):
+        self.text.append(data)
+
 class PublisherRegression(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='blog-regression-')
@@ -31,6 +39,34 @@ class PublisherRegression(unittest.TestCase):
         self.source.mkdir()
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_special_category_labels_and_post_metadata(self):
+        checkout = self.root/'site'
+        shutil.copytree(ROOT, checkout, ignore=shutil.ignore_patterns('.git', 'node_modules', 'dist', '.astro', '__pycache__'))
+        posts = checkout/'src/content/posts'
+        for category in ('constructor', '__proto__', 'toString'):
+            note(posts/f'{category}.md', f'Post {category}', category)
+        note(posts/'album.md', 'Album', 'music', (
+            'author: Author Name\ndirector: Director Name\nartist: Artist Name\n'
+            'year: 0\ncover: /covers/test.svg\nrating: 0\npublisher: Publisher Name\n'
+            'pages: 0\nlabel: Label Name\ncast: [Cast Name]\ngenre: [Genre Name]\n'
+            'tracks: [First Track, Second Track]\n'))
+        # Supply tags without duplicating the helper's default key.
+        album = posts/'album.md'
+        album.write_text(album.read_text().replace('tags: []', 'tags: [Tag Name]'))
+        publisher.build_log(checkout)
+        for category in ('constructor', '__proto__', 'toString'):
+            slug = category if category != 'toString' else 'tostring-' + hashlib.sha256(category.encode()).hexdigest()[:12]
+            page = (checkout/'dist/categories'/slug/'index.html').read_text()
+            parsed = TextExtractor()
+            parsed.feed(page)
+            self.assertIn(category, [part.strip() for part in parsed.text])
+        page = (checkout/'dist/posts/album/index.html').read_text()
+        for value in ('Author Name', 'Director Name', 'Artist Name', '0p', '0 / 10',
+                      'Publisher Name', 'Label Name', 'Cast Name', 'Genre Name', 'Tag Name',
+                      'First Track', 'Second Track', '/covers/test.svg', ' · 0'):
+            self.assertIn(value, page)
+        self.assertRegex(page, r'<ol>\s*<li>First Track</li>\s*<li>Second Track</li>\s*</ol>')
 
     def test_1_identical_unmanaged_is_never_adopted(self):
         note(self.source/'same.md', 'Same', 'book')

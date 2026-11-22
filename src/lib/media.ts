@@ -19,7 +19,8 @@ export function categorySlugs(categories: string[]): Map<string, string> {
   if (new Set(result.values()).size !== result.size) throw new Error('Category URL slug collision');
   return result;
 }
-export const categoryLabel = (category: string) => ({ book: '책', film: '영화', music: '음악' } as Record<string, string>)[category.toLowerCase()] ?? category;
+const categoryLabels = new Map([['book', '책'], ['film', '영화'], ['music', '음악']]);
+export const categoryLabel = (category: string) => categoryLabels.get(category.toLowerCase()) ?? category;
 export async function getPublished() { return getCollection('posts', ({ data }) => data.publish); }
 export function toCard(entry: CollectionEntry<'posts'>): CardModel {
   const d = entry.data;
