@@ -1,9 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import MediaCard from '../../components/MediaCard.astro';
-import { categorySlug, categoryLabel, getCategories, getPublished, toCard } from '../../lib/media';
+import { categorySlugs, categoryLabel, getCategories, getPublished, toCard } from '../../lib/media';
 export async function getStaticPaths() {
-  return (await getCategories()).map((category) => ({ params: { category: categorySlug(category) }, props: { category } }));
+  const categories = await getCategories();
+  const slugs = categorySlugs(categories);
+  return categories.map((category) => ({ params: { category: slugs.get(category)! }, props: { category } }));
 }
 const { category } = Astro.props;
 const cards = (await getPublished()).filter((e) => e.data.category.trim() === category).map(toCard)
