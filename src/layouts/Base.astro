@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import { withBase } from '../lib/url';
+import { getCategories, categoryLabel, categorySlug } from '../lib/media';
 import '../styles/global.css';
 
 interface Props {
@@ -8,12 +9,10 @@ interface Props {
   description?: string;
 }
 
-const { title = '듣고, 보고, 읽은 것들', description = '연찬의 책·음악·영화 감상 기록' } = Astro.props;
-const nav = [
-  { href: withBase('/music/'), label: '음악' },
-  { href: withBase('/films/'), label: '영화' },
-  { href: withBase('/books/'), label: '책' },
-];
+const { title = '듣고, 보고, 읽은 것들', description = '연찬의 기록' } = Astro.props;
+const nav = (await getCategories()).map((category) => ({
+  href: withBase(`/categories/${categorySlug(category)}/`), label: categoryLabel(category),
+}));
 const current = Astro.url.pathname;
 ---
 
@@ -62,7 +61,7 @@ const current = Astro.url.pathname;
     </main>
 
     <footer class="site-footer">
-      <div class="wrap">© {new Date().getFullYear()} Yeonchan — 음악·영화·책 감상 기록</div>
+      <div class="wrap">© {new Date().getFullYear()} Yeonchan — 기록</div>
     </footer>
 
     <script>
