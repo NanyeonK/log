@@ -1,0 +1,17 @@
+---
+import Base from '../../layouts/Base.astro';
+import MediaCard from '../../components/MediaCard.astro';
+import { categorySlugs, categoryLabel, getCategories, getPublished, toCard } from '../../lib/media';
+export async function getStaticPaths() {
+  const categories = await getCategories();
+  const slugs = categorySlugs(categories);
+  return categories.map((category) => ({ params: { category: slugs.get(category)! }, props: { category } }));
+}
+const { category } = Astro.props;
+const cards = (await getPublished()).filter((e) => e.data.category === category).map(toCard)
+  .sort((a, b) => b.date.getTime() - a.date.getTime());
+---
+<Base title={`${categoryLabel(category)} — 기록`}>
+  <section class="hero"><h1 data-hero-title><span class="hero-line"><span class="hero-line-inner">{categoryLabel(category)}<em>.</em></span></span></h1></section>
+  <div class="media-grid">{cards.map((card, i) => <MediaCard card={card} index={i} />)}</div>
+</Base>

@@ -1,71 +1,42 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { withBase } from './url';
-
-export type Kind = 'music' | 'films' | 'books';
-
+import { createHash } from 'node:crypto';
 export interface CardModel {
-  kind: Kind;
-  kindLabel: string;
-  href: string;
-  transitionName: string;
-  title: string;
-  creator: string;
-  year?: number;
-  cover: string;
-  rating?: number;
-  date: Date;
+  kindLabel: string; href: string; transitionName: string; title: string;
+  creator: string; year?: number; cover: string; rating?: number; date: Date;
   aspect: 'square' | 'poster';
 }
-
-export const KIND_LABEL: Record<Kind, string> = {
-  music: '음악',
-  films: '영화',
-  books: '책',
+const baseSlug = (category: string) => {
+  const slug = category.normalize('NFKC').trim().toLowerCase().replace(/[^\p{L}\p{M}\p{N}._~-]+/gu, '-').replace(/^-|-$/g, '');
+  return !slug || slug === '.' || slug === '..' ? 'category' : slug;
 };
-
-const FALLBACK_COVER: Record<Kind, string> = {
-  music: '/covers/placeholder-music.svg',
-  films: '/covers/placeholder-film.svg',
-  books: '/covers/placeholder-book.svg',
-};
-
-function creatorOf(kind: Kind, data: Record<string, unknown>): string {
-  if (kind === 'music') return String(data.artist ?? '');
-  if (kind === 'films') return String(data.director ?? '');
-  return String(data.author ?? '');
+export function categorySlugs(categories: string[]): Map<string, string> {
+  const result = new Map(categories.map((category) => {
+    const base = baseSlug(category);
+    const suffix = base !== category || /-[0-9a-f]{12}$/.test(category) ? `-${createHash('sha256').update(category).digest('hex').slice(0, 12)}` : '';
+    return [category, base + suffix];
+  }));
+  if (new Set(result.values()).size !== result.size) throw new Error('Category URL slug collision');
+  return result;
 }
-
-export function toCard(kind: Kind, entry: CollectionEntry<Kind>): CardModel {
-  const data = entry.data as Record<string, unknown> & {
-    title: string;
-    year?: number;
-    cover?: string;
-    rating?: number;
-    date: Date;
-  };
-  return {
-    kind,
-    kindLabel: KIND_LABEL[kind],
-    href: withBase(`/${kind}/${entry.id}/`),
-    transitionName: `cover-${kind}-${entry.id}`,
-    title: data.title,
-    creator: creatorOf(kind, data),
-    year: data.year,
-    cover: withBase(data.cover ?? FALLBACK_COVER[kind]),
-    rating: data.rating,
-    date: data.date,
-    aspect: kind === 'music' ? 'square' : 'poster',
-  };
+const categoryLabels = new Map([['book', '책'], ['film', '영화'], ['music', '음악']]);
+export const categoryLabel = (category: string) => categoryLabels.get(category.toLowerCase()) ?? category;
+export async function getPublished() { return getCollection('posts', ({ data }) => data.publish); }
+export function toCard(entry: CollectionEntry<'posts'>): CardModel {
+  const d = entry.data;
+  const kind = d.category.toLowerCase();
+  const fallback = kind === 'music' ? 'music' : kind === 'film' ? 'film' : 'book';
+  return { kindLabel: categoryLabel(d.category), href: withBase(`/posts/${entry.id}/`),
+    transitionName: `cover-${entry.id}`, title: d.title,
+    creator: d.author ?? d.director ?? d.artist ?? '', year: d.year,
+    cover: withBase(d.cover ?? `/covers/placeholder-${fallback}.svg`), rating: d.rating,
+    date: d.date, aspect: kind === 'music' ? 'square' : 'poster' };
 }
-
-export async function getPublished(kind: Kind) {
-  return getCollection(kind, ({ data }) => data.publish);
+export async function getAllCards() {
+  return (await getPublished()).map(toCard).sort((a, b) => b.date.getTime() - a.date.getTime());
 }
-
-export async function getAllCards(): Promise<CardModel[]> {
-  const kinds: Kind[] = ['music', 'films', 'books'];
-  const nested = await Promise.all(
-    kinds.map(async (kind) => (await getPublished(kind)).map((e) => toCard(kind, e))),
-  );
-  return nested.flat().sort((a, b) => b.date.getTime() - a.date.getTime());
+export async function getCategories() {
+  const categories = [...new Set((await getPublished()).map((entry) => entry.data.category))];
+  categorySlugs(categories);
+  return categories.sort((a, b) => a.localeCompare(b));
 }

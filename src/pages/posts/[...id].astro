@@ -1,0 +1,34 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import EntryHero from '../../components/EntryHero.astro';
+import { getPublished, toCard } from '../../lib/media';
+export async function getStaticPaths() {
+  return (await getPublished()).map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const card = toCard(entry);
+const d = entry.data;
+const facts: Array<[string, string]> = [];
+if (d.director && d.author != null) facts.push(['감독', d.director]);
+if (d.artist && (d.author != null || d.director != null)) facts.push(['아티스트', d.artist]);
+if (d.publisher) facts.push(['출판사', d.publisher]);
+if (d.pages != null) facts.push(['쪽수', `${d.pages}p`]);
+if (d.label) facts.push(['레이블', d.label]);
+if (d.cast?.length) facts.push(['출연', d.cast.join(', ')]);
+if (d.genre.length) facts.push(['장르', d.genre.join(', ')]);
+if (d.tags.length) facts.push(['태그', d.tags.join(', ')]);
+if (d.rating != null) facts.push(['평점', `${d.rating} / 10`]);
+facts.push(['날짜', d.date.toISOString().slice(0, 10)]);
+---
+<Base title={`${d.title} — 기록`}>
+  <EntryHero card={card} facts={facts} />
+  {d.tracks?.length ? (
+    <section class="tracklist reveal">
+      <h2>트랙</h2>
+      <ol>{d.tracks.map((track) => <li>{track}</li>)}</ol>
+    </section>
+  ) : null}
+  <article class="prose reveal"><Content /></article>
+</Base>
